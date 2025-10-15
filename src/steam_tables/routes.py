@@ -14,7 +14,7 @@ def steam_tables():
     return render_template('steam_tables.html', cycle_data=cycle_data)
 
 @steam_tables_blueprint.route('/calculate_point', methods=['POST'])
-def calculate_point_endpoint():
+def calculate_point():
     """Calculates the properties of a single point based on JSON data."""
     try:
         point_data = request.get_json()
@@ -32,7 +32,7 @@ def calculate_point_endpoint():
         return jsonify({'error': f'Error interno del servidor: {e}'}), 500
 
 @steam_tables_blueprint.route('/calculate_cycle', methods=['POST'])
-def calculate_cycle_endpoint():
+def calculate_cycle():
     """Receives all cycle data and calculates expansions and/or efficiencies."""
     try:
         data = request.get_json()
@@ -49,7 +49,7 @@ def calculate_cycle_endpoint():
         return jsonify({'error': f'Error interno del servidor: {e}'}), 500
 
 @steam_tables_blueprint.route('/calculate_balances', methods=['POST'])
-def calculate_balances_endpoint():
+def calculate_balances():
     """Receives all page data and calculates mass/energy balances."""
     try:
         data = request.get_json()
