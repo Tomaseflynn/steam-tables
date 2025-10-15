@@ -2,6 +2,7 @@ const CACHE_NAME = 'steam-tables-cache-v3'; // Versión 3
 const urlsToCache = [
   '/',
   '/static/styles.css',
+  '/static/manifest.json', // Añadido el manifest a la caché
   '/static/icon-192.png',
   '/static/icon-512.png'
 ];
