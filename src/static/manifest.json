@@ -1,0 +1,21 @@
+{
+  "name": "Asistente de Ciclo de Vapor",
+  "short_name": "CicloVapor",
+  "description": "Calculadora de ciclos de vapor Rankine con regeneración.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5394",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

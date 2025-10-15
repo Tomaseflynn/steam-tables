@@ -1,8 +1,4 @@
-# Dev environment
-pip
-autopep8
-
-# App
-flask
-pyXSteam
-gunicorn
+Flask==3.0.3
+scipy==1.13.0
+iapws==1.5.3
+gunicorn==22.0.0
