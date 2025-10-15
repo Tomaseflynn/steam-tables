@@ -1,7 +1,4 @@
 
-import sys
-sys.path.append('/root/wizard_project/src/steam_tables')
-
 from pyXSteam.XSteam import XSteam
 
 def kcal_to_kj(kcal):
