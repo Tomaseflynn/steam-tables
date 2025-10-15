@@ -1,3 +1,3 @@
 #!/bin/sh
 source .venv/bin/activate
-python -u -m flask --app main run -p $PORT --debug
+gunicorn --workers 3 --bind 0.0.0.0:$PORT main:app

@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asistente de Cálculo de Ciclos de Vapor</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2em; color: #333; background-color: #f8f9fa; }
+        h1, h2, h3 { color: #0b5394; border-bottom: 2px solid #dee2e6; padding-bottom: 0.5em;}
+        table { border-collapse: collapse; width: 100%; margin-top: 1.5em; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; vertical-align: middle; }
+        th { background-color: #e9ecef; font-weight: 600; }
+        .unit { font-size: 0.8em; color: #6c757d; font-weight: normal; }
+        .description { text-align: left; width: 25%; }
+        .point-id { width: 8%; font-weight: bold; background-color: #f8f9fa; }
+        .ideal-point { color: #6c757d; font-style: italic; }
+        input { width: 95%; border: 1px solid #ced4da; padding: 8px; text-align: right; border-radius: 4px; }
+        input[readonly] { background-color: #e9ecef; cursor: not-allowed; }
+        .point-calc-button { background-color: #007bff; color: white; border: none; padding: 8px 12px; font-size: 0.9em; cursor: pointer; border-radius: 5px; }
+        .cycle-params, .balances-container, .results-container { background-color: #f0f0f0; padding: 1.5em; border-radius: 8px; margin-top: 2em; }
+        .container-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5em; }
+        .group { border: 1px solid #ccc; padding: 1em; border-radius: 5px; background-color: #fff;}
+        .group h3 { border: none; margin-top: 0; font-size: 1.2em; }
+        .group label { display: block; margin: 0.5em 0 0.2em; font-size: 0.9em; }
+        .main-calc-button-container { text-align: center; margin: 2em 0; }
+        .main-calc-button { background-color: #dc3545; color: white; font-size: 1.3em; padding: 15px 30px; border-radius: 8px; cursor: pointer; border: none; }
+        .error { color: #d9534f; font-weight: bold; margin-top: 1em; background-color: #f2dede; border: 1px solid #ebccd1; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Asistente de Ciclo de Vapor</h1>
+
+    <h2>Puntos del Ciclo</h2>
+    <div style="margin-bottom: 1em; background-color: #e9ecef; padding: 1em; border-radius: 5px;">
+        <label for="auto-fill-checkbox">
+            <input type="checkbox" id="auto-fill-checkbox" checked> 
+            <strong>Activar Relleno Automático Inteligente:</strong> Copia automáticamente presiones y entropías a los puntos relacionados.
+        </label>
+    </div>
+    <table id="points-table">
+        <thead>
+            <tr>
+                <th class="point-id">Punto</th><th class="description">Descripción</th><th>Presión<br><span class="unit">(bar)</span></th><th>Temperatura<br><span class="unit">(°C)</span></th><th>Entalpía<br><span class="unit">(kcal/kg)</span></th><th>Entropía<br><span class="unit">(kcal/kg·K)</span></th><th>Título<br><span class="unit">(0-1)</span></th><th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p_id, p_data in cycle_data.items() %}
+            <tr class="point-row {{ 'ideal-point' if '_prime' in p_id }}" data-point-id="{{ p_id }}">
+                <td class="point-id">{{ p_id.replace('_prime', "'") }}</td>
+                <td class="description">{{ p_data.desc }}</td>
+                {% for prop in ['p', 't', 'h', 's', 'x'] %}
+                <td><input type="text" name="{{ p_id }}_{{ prop }}" class="point-input"></td>
+                {% endfor %}
+                <td><button type="button" class="point-calc-button">Calcular</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="cycle-params container-grid">
+        <div class="group">
+            <h3>Rendimientos de Turbinas</h3>
+            <label for="eta_hp">Rend. Turbina AP (%):</label>
+            <input type="text" id="eta_hp" name="eta_hp" value="85">
+            <label for="eta_lp">Rend. Turbina BP (%):</label>
+            <input type="text" id="eta_lp" name="eta_lp" value="85">
+            <button type="button" id="cycle-calc-button" class="point-calc-button" style="background-color:#28a745; font-size: 1em; padding: 10px 15px; margin-top: 1em;">Calcular Expansiones</button>
+        </div>
+    </div>
+    
+    <div class="balances-container container-grid">
+        <div class="group">
+            <h3>Flujos Másicos</h3>
+            <label for="Gv">Vapor Total (Gv) <span class="unit">(kg/h)</span></label>
+            <input type="text" id="Gv" name="Gv">
+            <label for="Gx">Vapor Extraído (Gx) <span class="unit">(kg/h)</span></label>
+            <input type="text" id="Gx" name="Gx">
+            <label for="Gc">Vapor Condensado (Gc) <span class="unit">(kg/h)</span></label>
+            <input type="text" id="Gc" name="Gc">
+        </div>
+        <div class="group">
+            <h3>Generador de Vapor</h3>
+            <label for="rgv">Rendimiento G.V. (%)</label>
+            <input type="text" id="rgv" name="rgv">
+            <label for="Gco">Consumo Combustible (Gco) <span class="unit">(kg/h)</span></label>
+            <input type="text" id="Gco" name="Gco">
+            <label for="Pci">Poder Calorífico Inferior (Pci) <span class="unit">(kcal/kg)</span></label>
+            <input type="text" id="Pci" name="Pci">
+        </div>
+        <div class="group">
+            <h3>Condensador</h3>
+            <label for="W">Agua Refrigeración (W) <span class="unit">(kg/h)</span></label>
+            <input type="text" id="W" name="W">
+            <label for="ts">Temp. Salida Agua (°C)</label>
+            <input type="text" id="ts" name="ts">
+            <label for="te">Temp. Entrada Agua (°C)</label>
+            <input type="text" id="te" name="te">
+             <label for="Cp">Calor Específico Agua (Cp) <span class="unit">(kcal/kg°C)</span></label>
+            <input type="text" id="Cp" name="Cp" value="1">
+        </div>
+    </div>
+
+    <div class="main-calc-button-container">
+        <button type="button" id="main-balance-button" class="main-calc-button">Calcular Balances y Resultados</button>
+    </div>
+
+    <div class="results-container container-grid">
+        <div class="group">
+            <h3>Resultados del Ciclo</h3>
+            <label for="potencia_kw">Potencia Neta en Bornes (kW)</label>
+            <input type="text" id="potencia_kw" name="potencia_kw" readonly>
+            <label for="ganancia_regeneracion">Ganancia por Regeneración (%)</label>
+            <input type="text" id="ganancia_regeneracion" name="ganancia_regeneracion" readonly>
+            <label for="Qc">Calor Intercambiado Condensador (kcal/h)</label>
+            <input type="text" id="Qc" name="Qc" readonly>
+        </div>
+    </div>
+
+    <div id="error-container" class="error" style="display: none;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- SETUP Y HELPERS ---
+    function getFloatValue(elementId) {
+        const input = document.getElementById(elementId);
+        if (input && input.value.trim() !== '') {
+            return parseFloat(input.value.trim().replace(',', '.'));
+        }
+        return null;
+    }
+
+    function getTableFloatValue(input) {
+        if (input && input.value.trim() !== '') {
+            return parseFloat(input.value.trim().replace(',', '.'));
+        }
+        return undefined;
+    }
+
+    function setInputValue(input, value, decimals) {
+        if (!input) return;
+        if (value !== null && value !== undefined) {
+            let stringValue = parseFloat(value).toFixed(decimals);
+            // Opcional: reemplazar punto por coma para visualización local
+            // stringValue = stringValue.replace('.', ',');
+            input.value = stringValue;
+        } else {
+            input.value = '';
+        }
+    }
+    
+    const balance_param_ids = ['Gv', 'Gx', 'Gc', 'rgv', 'Gco', 'Pci', 'W', 'ts', 'te', 'Cp'];
+    const result_param_ids = ['potencia_kw', 'ganancia_regeneracion', 'Qc'];
+
+    // --- FASE 5: RELLENO AUTOMÁTICO INTELIGENTE ---
+    const autoFillCheckbox = document.getElementById('auto-fill-checkbox');
+    const propagationGroups = [
+        ['1_s', '2_prime_s'],
+        ['3_s', '4_prime_s', 'x_prime_s'],
+        ['5_s', '6_prime_s'],
+        ['1_p', '6_p', '6_prime_p'],
+        ['2_p', '2_prime_p', 'n_p', '3_p'],
+        ['4_p', '4_prime_p', '5_p'],
+        ['x_p', 'x_prime_p', 'n_prime_p']
+    ];
+    const propagationMap = {};
+    propagationGroups.forEach(group => {
+        group.forEach(sourceName => {
+            if (!propagationMap[sourceName]) propagationMap[sourceName] = [];
+            group.forEach(targetName => {
+                if (sourceName !== targetName) propagationMap[sourceName].push(targetName);
+            });
+        });
+    });
+
+    function propagateValue(sourceName, sourceValue) {
+        if (!autoFillCheckbox.checked) return;
+        if (!propagationMap[sourceName]) return;
+
+        propagationMap[sourceName].forEach(targetName => {
+            const targetInputElement = document.querySelector(`[name="${targetName}"]`);
+            if (targetInputElement) {
+                 targetInputElement.value = sourceValue;
+            }
+        });
+    }
+
+    document.getElementById('points-table').addEventListener('input', function(event) {
+        if (!event.target.classList.contains('point-input')) return;
+        const sourceValue = event.target.value.trim();
+        propagateValue(event.target.name, sourceValue);
+    });
+
+
+    // --- CÁLCULO DE PUNTO INDIVIDUAL (Fase 1) ---
+    document.querySelectorAll('#points-table .point-calc-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            const row = event.target.closest('tr');
+            if (!row) return;
+            const pointId = row.dataset.pointId;
+            const pointData = { id: pointId };
+            let property_count = 0;
+
+            row.querySelectorAll('.point-input').forEach(inp => {
+                const prop = inp.name.split('_').pop();
+                const value = getTableFloatValue(inp);
+                if (value !== undefined) {
+                    pointData[prop] = value;
+                    property_count++;
+                }
+            });
+
+            if (property_count < 2) {
+                return showError('Por favor, introduzca al menos dos propiedades para calcular un punto.');
+            }
+
+            fetch('/calculate_point', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pointData),
+            })
+            .then(handleFetchResponse)
+            .then(data => {
+                hideError();
+                // 1. Actualizar valores
+                for (const prop in data) {
+                    const inputToUpdate = row.querySelector(`[name="${pointId}_${prop}"]`);
+                    setInputValue(inputToUpdate, data[prop], 4);
+                }
+                // 2. Propagar después de actualizar
+                for (const prop in data) {
+                    const updatedInput = row.querySelector(`[name="${pointId}_${prop}"]`);
+                    if(updatedInput) {
+                       propagateValue(updatedInput.name, updatedInput.value);
+                    }
+                }
+            })
+            .catch(showError);
+        });
+    });
+
+    // --- CÁLCULO DE EXPANSIONES DE CICLO (Fase 2) ---
+    document.getElementById('cycle-calc-button').addEventListener('click', function() {
+        const all_points = {};
+        document.querySelectorAll('#points-table tbody tr').forEach(row => {
+            const point_id = row.dataset.pointId;
+            const point_data = {};
+            row.querySelectorAll('.point-input').forEach(input => {
+                const prop = input.name.split('_').pop();
+                const value = getTableFloatValue(input);
+                if (value !== undefined) point_data[prop] = value;
+            });
+            all_points[point_id] = point_data;
+        });
+
+        const payload = {
+            points: all_points,
+            eta_hp: getFloatValue('eta_hp'),
+            eta_lp: getFloatValue('eta_lp')
+        };
+
+        fetch('/calculate_cycle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(handleFetchResponse)
+        .then(data => {
+            hideError();
+            setInputValue(document.getElementById('eta_hp'), data.eta_hp, 2);
+            setInputValue(document.getElementById('eta_lp'), data.eta_lp, 2);
+            // 1. Actualizar valores
+            for (const p_id in data.points) {
+                const point_data = data.points[p_id];
+                for (const prop in point_data) {
+                    const input = document.querySelector(`[name="${p_id}_${prop}"]`);
+                    setInputValue(input, point_data[prop], 4);
+                }
+            }
+            // 2. Propagar después de actualizar
+            for (const p_id in data.points) {
+                const point_data = data.points[p_id];
+                for (const prop in point_data) {
+                    const input = document.querySelector(`[name="${p_id}_${prop}"]`);
+                    if(input) {
+                        propagateValue(input.name, input.value);
+                    }
+                }
+            }
+        })
+        .catch(showError);
+    });
+
+    // --- CÁLCULO PRINCIPAL DE BALANCES Y RESULTADOS (Fase 3 y 4) ---
+    document.getElementById('main-balance-button').addEventListener('click', function() {
+        const all_points = {};
+        document.querySelectorAll('#points-table tbody tr').forEach(row => {
+            const point_id = row.dataset.pointId;
+            const point_data = {};
+            row.querySelectorAll('.point-input').forEach(input => {
+                const prop = input.name.split('_').pop();
+                const value = getTableFloatValue(input);
+                if (value !== undefined) point_data[prop] = value;
+            });
+            all_points[point_id] = point_data;
+        });
+
+        const balance_params = {};
+        balance_param_ids.forEach(id => {
+            const value = getFloatValue(id);
+            if (value !== null) balance_params[id] = value;
+        });
+
+        const payload = { points: all_points, params: balance_params };
+
+        fetch('/calculate_balances', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(handleFetchResponse)
+        .then(data => {
+            hideError();
+            const calculated_params = data.params;
+            [...balance_param_ids, ...result_param_ids].forEach(id => {
+                const input = document.getElementById(id);
+                if (input && calculated_params[id] !== undefined) {
+                    const decimals = ['rgv', 'ganancia_regeneracion', 'potencia_kw'].includes(id) ? 2 : 4;
+                    setInputValue(input, calculated_params[id], decimals);
+                }
+            });
+        })
+        .catch(showError);
+    });
+
+    // --- UTILIDADES DE ERRORES Y RESPUESTAS ---
+    const errorDiv = document.getElementById('error-container');
+    function showError(error) {
+        errorDiv.textContent = error.message || error;
+        errorDiv.style.display = 'block';
+    }
+    function hideError() {
+        errorDiv.style.display = 'none';
+    }
+    function handleFetchResponse(response) {
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw new Error(data.error || `Error del servidor: ${response.statusText}`);
+            }
+            return data;
+        });
+    }
+});
+</script>
+</body>
+</html>
