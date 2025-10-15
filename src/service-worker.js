@@ -1,4 +1,4 @@
-const CACHE_NAME = 'steam-tables-cache-v2'; // Versión 2
+const CACHE_NAME = 'steam-tables-cache-v3'; // Versión 3
 const urlsToCache = [
   '/',
   '/static/styles.css',
@@ -7,6 +7,8 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', function(event) {
+  // Forzar al nuevo service worker a activarse inmediatamente
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       console.log('Opened cache');
@@ -15,7 +17,6 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// Al activar, borra las cachés viejas
 self.addEventListener('activate', function(event) {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -29,17 +30,16 @@ self.addEventListener('activate', function(event) {
         })
       );
     })
+    // Tomar el control de las páginas abiertas inmediatamente
+    .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.match(event.request).then(function(response) {
-      // Cache-first strategy
-      if (response) {
-        return response;
-      }
-      return fetch(event.request);
-    })
-  );
+    // Estrategia: Network falling back to cache
+    event.respondWith(
+        fetch(event.request).catch(function() {
+            return caches.match(event.request);
+        })
+    );
 });
