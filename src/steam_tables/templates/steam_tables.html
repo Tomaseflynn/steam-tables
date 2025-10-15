@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return showError('Por favor, introduzca al menos dos propiedades para calcular un punto.');
             }
 
-            fetch('/calculate_point', {
+            fetch("{{ url_for('steam_tables.calculate_point') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(pointData),
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             eta_lp: getFloatValue('eta_lp')
         };
 
-        fetch('/calculate_cycle', {
+        fetch("{{ url_for('steam_tables.calculate_cycle') }}", {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const payload = { points: all_points, params: balance_params };
 
-        fetch('/calculate_balances', {
+        fetch("{{ url_for('steam_tables.calculate_balances') }}", {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
