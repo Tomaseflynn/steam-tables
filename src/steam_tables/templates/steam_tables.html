@@ -3,100 +3,216 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente de Cálculo de Ciclos de Vapor</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2em; color: #333; background-color: #f8f9fa; }
-        h1, h2, h3 { color: #0b5394; border-bottom: 2px solid #dee2e6; padding-bottom: 0.5em;}
-        table { border-collapse: collapse; width: 100%; margin-top: 1.5em; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; vertical-align: middle; }
-        th { background-color: #e9ecef; font-weight: 600; }
-        .unit { font-size: 0.8em; color: #6c757d; font-weight: normal; }
-        .description { text-align: left; width: 25%; }
-        .point-id { width: 8%; font-weight: bold; background-color: #f8f9fa; }
-        .ideal-point { color: #6c757d; font-style: italic; }
-        input { width: 95%; border: 1px solid #ced4da; padding: 8px; text-align: right; border-radius: 4px; }
-        input[readonly] { background-color: #e9ecef; cursor: not-allowed; }
-        .point-calc-button { background-color: #007bff; color: white; border: none; padding: 8px 12px; font-size: 0.9em; cursor: pointer; border-radius: 5px; }
-        .cycle-params, .balances-container, .results-container { background-color: #f0f0f0; padding: 1.5em; border-radius: 8px; margin-top: 2em; }
-        .container-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5em; }
-        .group { border: 1px solid #ccc; padding: 1em; border-radius: 5px; background-color: #fff;}
-        .group h3 { border: none; margin-top: 0; font-size: 1.2em; }
-        .group label { display: block; margin: 0.5em 0 0.2em; font-size: 0.9em; }
+        :root {
+            --primary-color: #0b5394;
+            --light-gray: #f8f9fa;
+            --medium-gray: #e9ecef;
+            --dark-gray: #6c757d;
+            --border-color: #dee2e6;
+            --text-color: #333;
+            --error-bg: #f2dede;
+            --error-text: #d9534f;
+            --error-border: #ebccd1;
+            --success-color: #28a745;
+            --main-action-color: #dc3545;
+            --secondary-action-color: #007bff;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 1em; 
+            color: var(--text-color); 
+            background-color: var(--light-gray); 
+        }
+
+        h1, h2, h3 { 
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 0.5em;
+        }
+        h1 { font-size: 1.8em; }
+        h2 { font-size: 1.5em; margin-top: 1.5em; }
+        h3 { border: none; margin-top: 0; font-size: 1.2em; }
+
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-top: 1.5em; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.05); 
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        th, td { 
+            border: 1px solid var(--border-color); 
+            padding: 12px 8px; 
+            text-align: center; 
+            vertical-align: middle; 
+            min-width: 100px;
+        }
+        th { 
+            background-color: var(--medium-gray); 
+            font-weight: 600; 
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .unit { font-size: 0.8em; color: var(--dark-gray); font-weight: normal; }
+        .description { text-align: left; width: 25%; min-width: 200px;}
+        .point-id { width: 8%; font-weight: bold; background-color: var(--light-gray); min-width: 60px; }
+        .ideal-point { color: var(--dark-gray); font-style: italic; }
+
+        input[type="number"], input[type="text"] {
+            width: 95%;
+            border: 1px solid var(--border-color);
+            padding: 12px 8px;
+            text-align: right;
+            border-radius: 5px;
+            font-size: 16px; /* Prevents iOS auto-zoom */
+            -moz-appearance: textfield; /* Firefox */
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[readonly] { background-color: var(--medium-gray); cursor: not-allowed; }
+        
+        button {
+            border: none;
+            padding: 12px 16px;
+            font-size: 16px; /* Prevents iOS auto-zoom */
+            cursor: pointer;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .point-calc-button { background-color: var(--secondary-action-color); }
+
+        .cycle-params, .balances-container, .results-container { 
+            background-color: #f0f0f0; 
+            padding: 1.5em; 
+            border-radius: 8px; 
+            margin-top: 2em; 
+        }
+        .container-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 1.5em; 
+        }
+        .group { 
+            border: 1px solid #ccc; 
+            padding: 1em; 
+            border-radius: 5px; 
+            background-color: #fff;
+        }
+        .group label { 
+            display: block; 
+            margin: 1em 0 0.3em; 
+            font-size: 1em; 
+        }
+
         .main-calc-button-container { text-align: center; margin: 2em 0; }
-        .main-calc-button { background-color: #dc3545; color: white; font-size: 1.3em; padding: 15px 30px; border-radius: 8px; cursor: pointer; border: none; }
-        .error { color: #d9534f; font-weight: bold; margin-top: 1em; background-color: #f2dede; border: 1px solid #ebccd1; padding: 10px; border-radius: 4px; }
+        .main-calc-button { 
+            background-color: var(--main-action-color); 
+            font-size: 1.3em; 
+            padding: 20px 30px; 
+        }
+
+        .error { 
+            color: var(--error-text); 
+            font-weight: bold; 
+            margin-top: 1em; 
+            background-color: var(--error-bg); 
+            border: 1px solid var(--error-border); 
+            padding: 15px; 
+            border-radius: 4px; 
+        }
     </style>
 </head>
 <body>
     <h1>Asistente de Ciclo de Vapor</h1>
 
-    <h2>Puntos del Ciclo</h2>
     <div style="margin-bottom: 1em; background-color: #e9ecef; padding: 1em; border-radius: 5px;">
         <label for="auto-fill-checkbox">
-            <input type="checkbox" id="auto-fill-checkbox" checked> 
-            <strong>Activar Relleno Automático Inteligente:</strong> Copia automáticamente presiones y entropías a los puntos relacionados.
+            <input type="checkbox" id="auto-fill-checkbox" checked style="width: auto; height: auto;"> 
+            <strong>Activar Relleno Automático Inteligente</strong>
         </label>
     </div>
-    <table id="points-table">
-        <thead>
-            <tr>
-                <th class="point-id">Punto</th><th class="description">Descripción</th><th>Presión<br><span class="unit">(bar)</span></th><th>Temperatura<br><span class="unit">(°C)</span></th><th>Entalpía<br><span class="unit">(kcal/kg)</span></th><th>Entropía<br><span class="unit">(kcal/kg·K)</span></th><th>Título<br><span class="unit">(0-1)</span></th><th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p_id, p_data in cycle_data.items() %}
-            <tr class="point-row {{ 'ideal-point' if '_prime' in p_id }}" data-point-id="{{ p_id }}">
-                <td class="point-id">{{ p_id.replace('_prime', "'") }}</td>
-                <td class="description">{{ p_data.desc }}</td>
-                {% for prop in ['p', 't', 'h', 's', 'x'] %}
-                <td><input type="text" name="{{ p_id }}_{{ prop }}" class="point-input"></td>
+    
+    <h2>Puntos del Ciclo</h2>
+    <div class="table-wrapper">
+        <table id="points-table">
+            <thead>
+                <tr>
+                    <th class="point-id">Punto</th><th class="description">Descripción</th><th>Presión<br><span class="unit">(bar)</span></th><th>Temp.<br><span class="unit">(°C)</span></th><th>Entalpía<br><span class="unit">(kcal/kg)</span></th><th>Entropía<br><span class="unit">(kcal/kg·K)</span></th><th>Título<br><span class="unit">(0-1)</span></th><th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p_id, p_data in cycle_data.items() %}
+                <tr class="point-row {{ 'ideal-point' if '_prime' in p_id }}" data-point-id="{{ p_id }}">
+                    <td class="point-id">{{ p_id.replace('_prime', "'") }}</td>
+                    <td class="description">{{ p_data.desc }}</td>
+                    {% for prop in ['p', 't', 'h', 's', 'x'] %}
+                    <td><input type="number" inputmode="decimal" step="any" name="{{ p_id }}_{{ prop }}" class="point-input"></td>
+                    {% endfor %}
+                    <td><button type="button" class="point-calc-button">Calcular</button></td>
+                </tr>
                 {% endfor %}
-                <td><button type="button" class="point-calc-button">Calcular</button></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 
     <div class="cycle-params container-grid">
         <div class="group">
             <h3>Rendimientos de Turbinas</h3>
             <label for="eta_hp">Rend. Turbina AP (%):</label>
-            <input type="text" id="eta_hp" name="eta_hp" value="85">
+            <input type="number" inputmode="decimal" step="any" id="eta_hp" name="eta_hp" value="85">
             <label for="eta_lp">Rend. Turbina BP (%):</label>
-            <input type="text" id="eta_lp" name="eta_lp" value="85">
-            <button type="button" id="cycle-calc-button" class="point-calc-button" style="background-color:#28a745; font-size: 1em; padding: 10px 15px; margin-top: 1em;">Calcular Expansiones</button>
+            <input type="number" inputmode="decimal" step="any" id="eta_lp" name="eta_lp" value="85">
+            <button type="button" id="cycle-calc-button" class="point-calc-button" style="background-color:var(--success-color); font-size: 1em; padding: 15px; margin-top: 1em; width: 100%;">Calcular Expansiones</button>
         </div>
     </div>
     
+    <h2>Balances Energéticos y de Masa</h2>
     <div class="balances-container container-grid">
         <div class="group">
             <h3>Flujos Másicos</h3>
             <label for="Gv">Vapor Total (Gv) <span class="unit">(kg/h)</span></label>
-            <input type="text" id="Gv" name="Gv">
+            <input type="number" inputmode="decimal" step="any" id="Gv" name="Gv">
             <label for="Gx">Vapor Extraído (Gx) <span class="unit">(kg/h)</span></label>
-            <input type="text" id="Gx" name="Gx">
+            <input type="number" inputmode="decimal" step="any" id="Gx" name="Gx">
             <label for="Gc">Vapor Condensado (Gc) <span class="unit">(kg/h)</span></label>
-            <input type="text" id="Gc" name="Gc">
+            <input type="number" inputmode="decimal" step="any" id="Gc" name="Gc">
         </div>
         <div class="group">
             <h3>Generador de Vapor</h3>
             <label for="rgv">Rendimiento G.V. (%)</label>
-            <input type="text" id="rgv" name="rgv">
+            <input type="number" inputmode="decimal" step="any" id="rgv" name="rgv">
             <label for="Gco">Consumo Combustible (Gco) <span class="unit">(kg/h)</span></label>
-            <input type="text" id="Gco" name="Gco">
+            <input type="number" inputmode="decimal" step="any" id="Gco" name="Gco">
             <label for="Pci">Poder Calorífico Inferior (Pci) <span class="unit">(kcal/kg)</span></label>
-            <input type="text" id="Pci" name="Pci">
+            <input type="number" inputmode="decimal" step="any" id="Pci" name="Pci">
         </div>
         <div class="group">
             <h3>Condensador</h3>
             <label for="W">Agua Refrigeración (W) <span class="unit">(kg/h)</span></label>
-            <input type="text" id="W" name="W">
+            <input type="number" inputmode="decimal" step="any" id="W" name="W">
             <label for="ts">Temp. Salida Agua (°C)</label>
-            <input type="text" id="ts" name="ts">
+            <input type="number" inputmode="decimal" step="any" id="ts" name="ts">
             <label for="te">Temp. Entrada Agua (°C)</label>
-            <input type="text" id="te" name="te">
+            <input type="number" inputmode="decimal" step="any" id="te" name="te">
              <label for="Cp">Calor Específico Agua (Cp) <span class="unit">(kcal/kg°C)</span></label>
-            <input type="text" id="Cp" name="Cp" value="1">
+            <input type="number" inputmode="decimal" step="any" id="Cp" name="Cp" value="1">
         </div>
     </div>
 
@@ -104,6 +220,7 @@
         <button type="button" id="main-balance-button" class="main-calc-button">Calcular Balances y Resultados</button>
     </div>
 
+    <h2>Resultados</h2>
     <div class="results-container container-grid">
         <div class="group">
             <h3>Resultados del Ciclo</h3>
@@ -140,8 +257,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!input) return;
         if (value !== null && value !== undefined) {
             let stringValue = parseFloat(value).toFixed(decimals);
-            // Opcional: reemplazar punto por coma para visualización local
-            // stringValue = stringValue.replace('.', ',');
             input.value = stringValue;
         } else {
             input.value = '';
