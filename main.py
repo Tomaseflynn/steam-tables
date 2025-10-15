@@ -1,31 +1,16 @@
-import os
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, render_template
 from src.steam_tables.routes import steam_tables_blueprint
 
-app = Flask(__name__, static_folder="src/static")
+app = Flask(__name__, template_folder='src/steam_tables/templates', static_folder='src')
+app.register_blueprint(steam_tables_blueprint, url_prefix='/steam')
 
-app.register_blueprint(steam_tables_blueprint)
+# Servir archivos estáticos (service worker, manifest)
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
 
-
-@app.route("/")
+# Ruta principal que renderiza la calculadora
+@app.route('/')
 def index():
-    return send_from_directory("src", "index.html")
-
-
-@app.route("/manifest.json")
-def manifest():
-    return send_from_directory("src", "manifest.json")
-
-
-@app.route("/service-worker.js")
-def service_worker():
-    return send_from_directory("src", "service-worker.js")
-
-
-def main():
-    app.run(port=int(os.environ.get("PORT", 80)))
-
-
-if __name__ == "__main__":
-    main()
+    return render_template('steam_tables.html')
